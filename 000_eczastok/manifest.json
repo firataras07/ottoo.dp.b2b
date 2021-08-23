@@ -1,0 +1,1697 @@
+{
+    "Constants": {
+        "alu_trigger_config" : {
+            "region" : "eu-central-1",
+            "divide" : 9,
+            "which_sqs" : "Fetch_1",
+            "db_machine_check_sql" : "SELECT  (CASE exists ( select Machine_Status from data_platform_b2b_log_db.machine_logs where Stack = '{stack}' and State = '{state}' order by Action_Time desc limit 1 )  WHEN FALSE THEN 'terminated' WHEN TRUE THEN  (select Machine_Status from data_platform_b2b_log_db.machine_logs where Stack = '{stack}' and State = '{state}' order by Action_Time desc limit 1) END) AS Machine_Status;",
+            "FarmAPI" : "{\"fail_behavior\": \"stop\", \"workingDirectory\": \"/home/ec2-user\", \"number_of_ignored_nodes\": 2, \"working_type\": {\"like_Lambda\": {\"generation_ttl\": {ttl}, \"Args\": {}, \"command_for_each\": [\"export LANG=tr_TR.UTF-8\", \"aws s3 cp s3://va7.bet.data/git-prod-scripts-do-not-touch/000_va7_artemis/ ./ --recursive\", \"aws s3 cp s3://va7.bet.data/git-prod-scripts-do-not-touch/001_dependents/ ./ --recursive\", \"mkdir ./data/\", \"python36 ./artemis_1_manager.py -ws {state} -wjf ALL\"]}}, \"number_of_nodes\": {number_of_node}, \"inf\": {\"eu-central-1\": {\"SecurityGroup\": \"Public_Security_Group\", \"IamInstanceProfile\": \"arn:aws:iam::027534141241:instance-profile/admin_for_test_ec2\", \"InstanceType\": \"m5.large\", \"key_pair_name\": \"Uluc_frankfurt_key\", \"ImageId\": \"ami-09104bac8ced0e6e4\"}}, \"Tags\": {\"State\": \"{state}\", \"Artemis\": \"{state}_Artemis_FARMAPI_Cluster\"}, \"instance_names\": \"Artemis-{state}_Artemis_FARMAPI_Cluster\"}",        
+            "what_is_expected" : {                
+                "min_number_of_file" : 9,   
+                "report_number" : 11,      
+                "files_paths" : [
+                    "data/daily/{state}/category/{data_date}/category--{its_rnd_str}.csv",
+                    "data/daily/{state}/order_item/{data_date}/order_item--{its_rnd_str}.csv",
+                    "data/daily/{state}/customer_customerRole_mapping/{data_date}/customer_customerRole_mapping--{its_rnd_str}.csv",
+                    "data/daily/{state}/order_vendor_review/{data_date}/order_vendor_review--{its_rnd_str}.csv",
+                    "data/daily/{state}/product_category_mapping/{data_date}/product_category_mapping--{its_rnd_str}.csv",
+                    "data/daily/{state}/vendor/{data_date}/vendor--{its_rnd_str}.csv",
+                    "data/daily/{state}/order/{data_date}/order--{its_rnd_str}.csv",
+                    "data/daily/{state}/customer/{data_date}/customer--{its_rnd_str}.csv",
+                    "data/daily/{state}/product/{data_date}/product--{its_rnd_str}.csv"
+                ],
+                "files_names" : [
+                    "category",
+                    "order_item",
+                    "customer_customerRole_mapping",
+                    "order_vendor_review",
+                    "product_category_mapping",
+                    "vendor",
+                    "order",
+                    "customer",
+                    "product"
+                ],
+                "db_control_sql" : "SELECT Table_Name, count(Table_Name) FROM data_platform_b2b_log_db.S3_Files WHERE Stack = '{stack}' AND Data_Date = '{data_date}' AND S3_Files.State = '{state}' AND S3_Files.Key like 'data%.csv' GROUP BY Table_Name ;"            ,
+                "db_report_control" : "SELECT count(DISTINCT(Table_Name)) as count  FROM data_platform_b2b_log_db.S3_Files where Stack = '{stack}' AND S3_Files.State = '{state}' and  S3_Files.Key like '%report%--latest.csv' and S3_Files.Data_Date = '{data_date}';"
+            }
+        },
+        "resources_region": "eu-central-1",
+        "stack": "b2b.eczastok",
+        "layer_execution_order": [
+            "Fetch_1",
+            "Decode_1",
+            "Decode_2",
+            "Alu_1"
+        ],
+        "bet_system_params": {
+            "sqs": {
+                "log_sqs": "https://sqs.eu-central-1.amazonaws.com/740062030037/dp_b2b-System_Message_Queue",
+                "log_sqs_region": "eu-central-1",
+                "email_sqs" : "https://sqs.eu-central-1.amazonaws.com/740062030037/dp_b2b-System_Email_Queue_Listener"
+            },
+            "db_connection": {
+                "host": "eczastok-mysql-test.c4wxkzrdt8ra.eu-central-1.rds.amazonaws.com",
+                "user": "admin",
+                "password": "DhFxpWJX67pBsiVp32yO",
+                "database": "data_platform_b2b_log_db"
+            },
+            "email_list" : {
+                "prod" : [
+                "uluc.vardar@ottoo.com"
+            ],
+            "dev" : [                
+                "uluc.vardar@ottoo.com"
+                ]}
+        },
+        "regexes": {
+            "my_latest_regex": "^(?P<folder>parquet_data)/(?P<period>daily)/(?P<state>prod|test|dev)/(?P<root_name>[^\/]*|multi_file_dependent)/(?P<data_date>(?P<year>20\\d{2})/(?P<month>0[1-9]|1[012])/(?P<day>0[1-9]|[12][0-9]|3[01]))/(?P<table_name>enriched_(?P=root_name)|(all_enriched_|enriched_)[^\\-]*join[^\\-]*)--latest\\.(?P<file_type>parquet)",
+            "Write_Back": "^(?P<folder>final_csv_data)/(?P<period>daily)/(?P<state>prod|test|dev)/(?P<root_name>export_files|[^\/]*)/(?P<data_date>(?P<year>20\\d{2})/(?P<month>0[1-9]|1[012])/(?P<day>0[1-9]|[12][0-9]|3[01]))/(?P<table_name>report_\\d+_(Daily|Weekly)_(?P<db_table_name>.*)_\\d+_(?P<db_schema>metrics))--latest\\.(?P<file_type>csv)$",
+            "Alu_1_regex": "^(?P<folder>parquet_data)/(?P<period>daily)/(?P<state>prod|test|dev)/(?P<root_name>multi_file_dependent)/(?P<data_date>(?P<year>20\\d{2})/(?P<month>0[1-9]|1[012])/(?P<day>0[1-9]|[12][0-9]|3[01]))/(?P<table_name>[^-]*)--(?P<its_rnd_str>(?P<file_rnd_str>[^\/-]*)-(?P<session_rnd_str>[^\/-]*))\\.(?P<file_type>parquet)$",
+            "Fetch_1_regex": "(?P<folder>data)/(?P<period>daily)/(?P<state>prod|test|dev)/(?P<root_name>[^\/]*)/(?P<data_date>(?P<year>20\\d{2})/(?P<month>0[1-9]|1[012])/(?P<day>0[1-9]|[12][0-9]|3[01]))/(?P<table_name>(?P=root_name))--(?P<its_rnd_str>(?P<file_rnd_str>[^\/-]*)-(?P<session_rnd_str>[^\/-]*))\\.(?P<file_type>csv)$",
+            "Decode_1_regex": "^(?P<folder>parquet_data)/(?P<period>daily)/(?P<state>prod|test|dev)/(?P<root_name>[^\/]*)/(?P<data_date>(?P<year>20\\d{2})/(?P<month>0[1-9]|1[012])/(?P<day>0[1-9]|[12][0-9]|3[01]))/(?P<table_name>enriched_(?P=root_name))--(?P<its_rnd_str>(?P<file_rnd_str>[^\/-]*)-(?P<session_rnd_str>[^\/-]*))\\.(?P<file_type>parquet)$",
+            "Decode_2_regex": "^(?P<folder>parquet_data)/(?P<period>daily)/(?P<state>prod|test|dev)/(?P<root_name>[^\/]*)/(?P<data_date>(?P<year>20\\d{2})/(?P<month>0[1-9]|1[012])/(?P<day>0[1-9]|[12][0-9]|3[01]))/(?P<table_name>enriched_(?P=root_name))--(?P<its_rnd_str>(?P<file_rnd_str>[^\/-]*)-(?P<session_rnd_str>[^\/-]*))\\.(?P<file_type>parquet)$"
+        },
+        "regex_keys": [
+            "folder",
+            "period",
+            "state",
+            "root_name",
+            "data_date",
+            "year",
+            "db_table_name",
+            "month",
+            "day",
+            "table_name",
+            "its_rnd_str",
+            "db_schema",
+            "file_type",
+            "file_rnd_str",
+            "session_rnd_str"
+        ],
+        "regexes_and_log_types": {
+            "my_latest_regex": "fetch_parquet_print",
+            "Write_Back": "fetch_report",
+            "Alu_1_regex": "fetch_parquet_print",
+            "Fetch_1_regex": "fetch_csv_print",
+            "Decode_1_regex": "fetch_parquet_print"
+        },
+        "regexes_and_s3_trigger_texts": {
+            "my_latest_regex": "===== Latest File Came =====\n_______{table_name}.{file_type}",
+            "Write_Back": "===== Report File Generated =====\n_______{table_name}.{file_type}",
+            "Alu_1_regex": "===== Multi Dependent File Generated as Parquet SQS Alu_1=====\n_______{table_name}.{file_type}",
+            "Fetch_1_regex": "===== va7 Team Sends A File! Its Delivered to SQS Fetch_1 =====\n_______{table_name}.{file_type}",
+            "Decode_1_regex": "===== Enriched File Has Arrived, Its Delivered to SQSes Decode_1 =====\n_______{table_name}.{file_type}"
+        },
+        "Sqses": {
+            "regions": "eu-central-1",
+            "dev": {
+                "Fetch_Sqs_Dead-letter": "",
+                "Fetch_1": "",
+                "Decode1_Sqs_Dead-letter": "",
+                "Decode_1": "",
+                "Alu_1": "",
+                "Alu1_Sqs_Dev_Dead-letter": "",
+                "Write_Back": "",
+                "Write_Back_Sqs_Dev_Dead-letter": "",
+                "Decode_2": "",
+                "Decode_2-dlq": ""
+            },
+            "prod": {
+                "Fetch_Sqs_Dead-letter": "",
+                "Fetch_1": "https://sqs.eu-central-1.amazonaws.com/740062030037/dp_b2b_eczastok-Prod_Fetch_1",
+                "Decode1_Sqs_Dead-letter": "",
+                "Decode_1": "https://sqs.eu-central-1.amazonaws.com/740062030037/dp_b2b_eczastok-Prod_Decode_1",
+                "Alu_1": "https://sqs.eu-central-1.amazonaws.com/740062030037/dp_b2b_eczastok-Prod_Alu_1",
+                "Alu1_Sqs_Prod_Dead-letter": "",
+                "Write_Back": "https://sqs.eu-central-1.amazonaws.com/740062030037/dp_b2b_eczastok-Prod_Write_Back_1",
+                "Big_Write_Back": "https://sqs.eu-central-1.amazonaws.com/027534141241/Artemis_Big_Write_Back_Sqs_Prod",
+                "Write_Back_Dead-letter": "",
+                "Decode_2": "https://sqs.eu-central-1.amazonaws.com/740062030037/dp_b2b_eczastok-Prod_Decode_2",
+                "Decode_2-Dead-letter": "",
+                "Decode_2_uniq.fifo" : "https://sqs.eu-central-1.amazonaws.com/740062030037/dp_b2b_eczastok-Prod_Decode_2.fifo"
+            }
+        },
+        "regex_sqs_relation": {
+            "Fetch_1_regex": "Fetch_1",
+            "Decode_1_regex": "Decode_1",
+            "Alu_1_regex": "Alu_1",
+            "Write_Back": "Write_Back"
+        }
+    },
+    "Fetch_1": {
+        "Description": "Onlardan geliyor. export keys name of incoming file.",
+        "imports_of_layer": {
+            "dependent+category.csv": {
+                "dependents": [
+                    "data/daily/{state}/category/{data_date}/category--{its_rnd_str}.csv"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "ottoo.it.team",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "dependent+order_item.csv": {
+                "dependents": [
+                    "data/daily/{state}/order_item/{data_date}/order_item--{its_rnd_str}.csv"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "ottoo.it.team",
+                    "from_region_name": "eu-central-1"
+                }
+            },     
+            "dependent+customer_customerRole_mapping.csv": {
+                "dependents": [
+                    "data/daily/{state}/customer_customerRole_mapping/{data_date}/customer_customerRole_mapping--{its_rnd_str}.csv"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "ottoo.it.team",
+                    "from_region_name": "eu-central-1"
+                }
+            }, 
+            "dependent+order_vendor_review.csv": {
+                "dependents": [
+                    "data/daily/{state}/order_vendor_review/{data_date}/order_vendor_review--{its_rnd_str}.csv"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "ottoo.it.team",
+                    "from_region_name": "eu-central-1"
+                }
+            }, 
+            "dependent+product_category_mapping.csv": {
+                "dependents": [
+                    "data/daily/{state}/product_category_mapping/{data_date}/product_category_mapping--{its_rnd_str}.csv"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "ottoo.it.team",
+                    "from_region_name": "eu-central-1"
+                }
+            }, 
+            "dependent+vendor.csv": {
+                "dependents": [
+                    "data/daily/{state}/vendor/{data_date}/vendor--{its_rnd_str}.csv"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "ottoo.it.team",
+                    "from_region_name": "eu-central-1"
+                }
+            }, 
+            "dependent+order.csv": {
+                "dependents": [
+                    "data/daily/{state}/order/{data_date}/order--{its_rnd_str}.csv"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "ottoo.it.team",
+                    "from_region_name": "eu-central-1"
+                }
+            }, 
+            "dependent+customer.csv": {
+                "dependents": [
+                    "data/daily/{state}/customer/{data_date}/customer--{its_rnd_str}.csv"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "ottoo.it.team",
+                    "from_region_name": "eu-central-1"
+                }
+            }, 
+            "dependent+product.csv": {
+                "dependents": [
+                    "data/daily/{state}/product/{data_date}/product--{its_rnd_str}.csv"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "ottoo.it.team",
+                    "from_region_name": "eu-central-1"
+                }
+            },            
+            "dependent+customer_role.csv": {
+                "dependents": [
+                    "data/daily/{state}/customer_role/{data_date}/customer_role--{its_rnd_str}.csv"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "ottoo.it.team",
+                    "from_region_name": "eu-central-1"
+                }
+            }                                                                                                                              
+        },
+        "exports_of_layer": {
+            "dependent+category.csv": {
+                "enriched_category.parquet": {
+                    "table_name": "category",
+                    "py_function_name": "standart_transform",
+                    "file_format": "csv",
+                    "in_file_format": "csv",
+                    "out_file_format": "parquet",
+                    "date_col_format": "%Y-%m-%d %H:%M:%S.%f",
+                    "table_columns": [
+                        "Id",
+                        "Name",
+                        "Description",
+                        "CategoryTemplateId",
+                        "MetaKeywords",
+                        "MetaDescription",
+                        "MetaTitle",
+                        "ParentCategoryId",
+                        "PictureId",
+                        "PageSize",
+                        "AllowCustomersToSelectPageSize",
+                        "PageSizeOptions",
+                        "PriceRanges",
+                        "ShowOnHomepage",
+                        "IncludeInTopMenu",
+                        "SubjectToAcl",
+                        "LimitedToStores",
+                        "Published",
+                        "Deleted",
+                        "DisplayOrder",
+                        "CreatedOnUtc",
+                        "UpdatedOnUtc"
+                    ],
+                    "table_columns_types": [
+                                "int",
+                                "str",
+                                "str",
+                                "int",
+                                "str",
+                                "str",
+                                "str",
+                                "int",
+                                "int",
+                                "int",
+                                "int",
+                                "str",
+                                "str",
+                                "int",
+                                "int",
+                                "int",
+                                "int",
+                                "int",
+                                "int",
+                                "int",
+                                "date",
+                                "date"  
+                    ],
+                    "dependen_tables": "dependent+category.csv",
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "ottoo.it.team",
+                        "from_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/category/{data_date}/enriched_category--{its_rnd_str}.parquet",
+                        "to_who": "dp.b2b.Layer2"
+                    },
+                    "Execution_Description": "ottoo it ekipleri tarafindan s3 e yuklenen file, alinip zenginlestirilir ve parquet formatinda kayit edilir..."
+                }                                                                                                                                                        
+            },   
+            "dependent+customer_role.csv": {
+                "enriched_customer_role.parquet": {
+                    "table_name": "customer_role",
+                    "py_function_name": "standart_transform",
+                    "file_format": "csv",
+                    "in_file_format": "csv",
+                    "out_file_format": "parquet",
+                    "date_col_format": "%Y-%m-%d %H:%M:%S.%f",
+                    "table_columns": [
+                                "Id",
+                                "Name",
+                                "FreeShipping",
+                                "TaxExempt",
+                                "Active",
+                                "IsSystemRole",
+                                "SystemName",
+                                "EnablePasswordLifetime",
+                                "OverrideTaxDisplayType",
+                                "DefaultTaxDisplayTypeId",
+                                "PurchasedWithProductId" 
+                    ],
+                    "table_columns_types": [
+                        "int",   
+                        "str",   
+                        "int",   
+                        "int",   
+                        "int",   
+                        "int",   
+                        "str",   
+                        "int",   
+                        "int",   
+                        "int",   
+                        "int"
+                    ],
+                    "dependen_tables": "dependent+customer_role.csv",
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "ottoo.it.team",
+                        "from_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/customer_role/{data_date}/enriched_customer_role--{its_rnd_str}.parquet",
+                        "to_who": "dp.b2b.Layer2"
+                    },
+                    "Execution_Description": "ottoo it ekipleri tarafindan s3 e yuklenen file, alinip zenginlestirilir ve parquet formatinda kayit edilir..."
+                }                                                                                                                                                        
+            },             
+            "dependent+order_item.csv": {
+                "enriched_order_item.parquet": {
+                    "table_name": "order_item",
+                    "py_function_name": "standart_transform",
+                    "file_format": "csv",
+                    "in_file_format": "csv",
+                    "out_file_format": "parquet",
+                    "date_col_format": "%Y-%m-%d %H:%M:%S",
+                    "table_columns": [
+                        "Id",                       
+                        "OrderItemGuid",            
+                        "OrderId",                  
+                        "ProductId",                
+                        "Quantity",                 
+                        "UnitPriceInclTax",         
+                        "UnitPriceExclTax",         
+                        "PriceInclTax",             
+                        "PriceExclTax",             
+                        "DiscountAmountInclTax",    
+                        "DiscountAmountExclTax",    
+                        "OriginalProductCost",      
+                        "AttributeDescription",     
+                        "AttributesXml",            
+                        "DownloadCount",            
+                        "IsDownloadActivated",      
+                        "LicenseDownloadId",        
+                        "ItemWeight",               
+                        "RentalStartDateUtc",       
+                        "RentalEndDateUtc"       
+                    ],
+                    "table_columns_types": [
+                        "int",
+                        "str",
+                        "int",
+                        "int",
+                        "int",
+                        "float",
+                        "float",
+                        "float",
+                        "float",
+                        "float",
+                        "float",
+                        "float",
+                        "str",
+                        "str",
+                        "int",
+                        "int",
+                        "int",
+                        "float",
+                        "date",
+                        "date"
+                    ],
+                    "dependen_tables": "dependent+order_item.csv",
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "ottoo.it.team",
+                        "from_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/order_item/{data_date}/enriched_order_item--{its_rnd_str}.parquet",
+                        "to_who": "dp.b2b.Layer2"
+                    },
+                    "Execution_Description": "ottoo it ekipleri tarafindan s3 e yuklenen file, alinip zenginlestirilir ve parquet formatinda kayit edilir..."
+                }                                                                                                                                                        
+            },  
+            "dependent+customer_customerRole_mapping.csv": {
+                "enriched_customer_customerRole_mapping.parquet": {
+                    "table_name": "customer_customerRole_mapping",
+                    "py_function_name": "standart_transform",
+                    "file_format": "csv",
+                    "in_file_format": "csv",
+                    "out_file_format": "parquet",
+                    "date_col_format": "%Y-%m-%d %H:%M:%S",
+                    "table_columns": [
+                        "Customer_Id", "CustomerRole_Id"
+                    ],
+                    "table_columns_types": [
+                        "int", "int"
+                    ],
+                    "dependen_tables": "dependent+customer_customerRole_mapping.csv",
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "ottoo.it.team",
+                        "from_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/customer_customerRole_mapping/{data_date}/enriched_customer_customerRole_mapping--{its_rnd_str}.parquet",
+                        "to_who": "dp.b2b.Layer2"
+                    },
+                    "Execution_Description": "ottoo it ekipleri tarafindan s3 e yuklenen file, alinip zenginlestirilir ve parquet formatinda kayit edilir..."
+                }                                                                                                                                                        
+            },  
+            "dependent+order_vendor_review.csv": {
+                "enriched_order_vendor_review.parquet": {
+                    "table_name": "order_vendor_review",
+                    "py_function_name": "standart_transform",
+                    "file_format": "csv",
+                    "in_file_format": "csv",
+                    "out_file_format": "parquet",
+                    "date_col_format": "%Y-%m-%d %H:%M:%S",
+                    "table_columns": [
+                        "Id",
+                        "OrderVendorId",
+                        "CustomerId",
+                        "VendorId",
+                        "CommunicationRating",
+                        "CreatedOnUtc",
+                        "DeliveryRating",
+                        "GeneralRating",
+                        "ReplyText",
+                        "ReplyTextApproved",
+                        "ReviewText",
+                        "ReviewTextApproved",
+                        "ShippingRating"
+                    ],
+                    "table_columns_types": [                   
+                            "int",
+                            "int",
+                            "int",
+                            "int",
+                            "int",
+                            "date",
+                            "int",
+                            "float",
+                            "str",
+                            "int",
+                            "str",
+                            "int",
+                            "int"
+                    ],
+                    "dependen_tables": "dependent+order_vendor_review.csv",
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "ottoo.it.team",
+                        "from_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/order_vendor_review/{data_date}/enriched_order_vendor_review--{its_rnd_str}.parquet",
+                        "to_who": "dp.b2b.Layer2"
+                    },
+                    "Execution_Description": "ottoo it ekipleri tarafindan s3 e yuklenen file, alinip zenginlestirilir ve parquet formatinda kayit edilir..."
+                }                                                                                                                                                        
+            },  
+            "dependent+product_category_mapping.csv": {
+                "enriched_product_category_mapping.parquet": {
+                    "table_name": "product_category_mapping",
+                    "py_function_name": "standart_transform",
+                    "file_format": "csv",
+                    "in_file_format": "csv",
+                    "out_file_format": "parquet",
+                    "date_col_format": "%Y-%m-%d %H:%M:%S",
+                    "table_columns": [
+                        "Id", "ProductId", "CategoryId", "IsFeaturedProduct", "DisplayOrder"
+                    ],
+                    "table_columns_types": [
+                           "int", 
+                           "int",
+                           "int",
+                           "int",
+                           "int"
+                    ],
+                    "dependen_tables": "dependent+product_category_mapping.csv",
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "ottoo.it.team",
+                        "from_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/product_category_mapping/{data_date}/enriched_product_category_mapping--{its_rnd_str}.parquet",
+                        "to_who": "dp.b2b.Layer2"
+                    },
+                    "Execution_Description": "ottoo it ekipleri tarafindan s3 e yuklenen file, alinip zenginlestirilir ve parquet formatinda kayit edilir..."
+                }                                                                                                                                                        
+            },  
+            "dependent+vendor.csv": {
+                "enriched_vendor.parquet": {
+                    "table_name": "vendor",
+                    "py_function_name": "standart_transform",
+                    "file_format": "csv",
+                    "in_file_format": "csv",
+                    "out_file_format": "parquet",
+                    "date_col_format": "%Y-%m-%d %H:%M:%S",
+                    "table_columns": [
+                        "Id",
+                        "Name",
+                        "Email",
+                        "Description",
+                        "PictureId",
+                        "AddressId",
+                        "AdminComment",
+                        "Active",
+                        "Deleted",
+                        "DisplayOrder",
+                        "MetaKeywords",
+                        "MetaDescription",
+                        "MetaTitle",
+                        "PageSize",
+                        "AllowCustomersToSelectPageSize",
+                        "PageSizeOptions",
+                        "FullDescription",
+                        "BannerPictureId"
+                    ],
+                    "table_columns_types": [
+                                        "int",
+                                        "str",
+                                        "str",
+                                        "str",
+                                        "int",
+                                        "int",
+                                        "str",
+                                        "int",
+                                        "int",
+                                        "int",
+                                        "str",
+                                        "str",
+                                        "str",
+                                        "int",
+                                        "int",
+                                        "str",
+                                        "str",
+                                        "int"
+                    ],
+                    "dependen_tables": "dependent+vendor.csv",
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "ottoo.it.team",
+                        "from_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/vendor/{data_date}/enriched_vendor--{its_rnd_str}.parquet",
+                        "to_who": "dp.b2b.Layer2"
+                    },
+                    "Execution_Description": "ottoo it ekipleri tarafindan s3 e yuklenen file, alinip zenginlestirilir ve parquet formatinda kayit edilir..."
+                }                                                                                                                                                        
+            },  
+            "dependent+order.csv": {
+                "enriched_order.parquet": {
+                    "table_name": "order",
+                    "py_function_name": "standart_transform",
+                    "file_format": "csv",
+                    "in_file_format": "csv",
+                    "out_file_format": "parquet",
+                    "date_col_format": "%Y-%m-%d %H:%M:%S.%f",
+                    "table_columns": [
+                        "Id",
+                        "OrderGuid",
+                        "StoreId",
+                        "CustomerId",
+                        "BillingAddressId",
+                        "ShippingAddressId",
+                        "PickupAddressId",
+                        "PickupInStore",
+                        "OrderStatusId",
+                        "ShippingStatusId",
+                        "PaymentStatusId",
+                        "PaymentMethodSystemName",
+                        "CustomerCurrencyCode",
+                        "CurrencyRate",
+                        "CustomerTaxDisplayTypeId",
+                        "VatNumber",
+                        "OrderSubtotalInclTax",
+                        "OrderSubtotalExclTax",
+                        "OrderSubTotalDiscountInclTax",
+                        "OrderSubTotalDiscountExclTax",
+                        "OrderShippingInclTax",
+                        "OrderShippingExclTax",
+                        "PaymentMethodAdditionalFeeInclTax",
+                        "PaymentMethodAdditionalFeeExclTax",
+                        "TaxRates",
+                        "OrderTax",
+                        "OrderDiscount",
+                        "OrderTotal",
+                        "RefundedAmount",
+                        "RewardPointsHistoryEntryId",
+                        "CheckoutAttributeDescription",
+                        "CustomerLanguageId",
+                        "AffiliateId",
+                        "CustomerIp",
+                        "AllowStoringCreditCardNumber",
+                        "CardType",
+                        "CardName",
+                        "CardNumber",
+                        "MaskedCreditCardNumber",
+                        "CardCvv2",
+                        "CardExpirationMonth",
+                        "CardExpirationYear",
+                        "AuthorizationTransactionId",
+                        "AuthorizationTransactionCode",
+                        "AuthorizationTransactionResult",
+                        "CaptureTransactionId",
+                        "CaptureTransactionResult",
+                        "SubscriptionTransactionId",
+                        "PaidDateUtc",
+                        "ShippingMethod",
+                        "ShippingRateComputationMethodSystemName",
+                        "Deleted",
+                        "CreatedOnUtc",
+                        "CustomOrderNumber",
+                        "RedeemedRewardPointsEntryId"
+                    ],
+                    "table_columns_types": [
+                        "int",
+                        "str",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "str",
+                        "str",
+                        "float",
+                        "int",
+                        "str",
+                        "float",
+                        "float",
+                        "float",
+                        "float",
+                        "float",
+                        "float",
+                        "float",
+                        "float",
+                        "str",
+                        "float",
+                        "float",
+                        "float",
+                        "float",
+                        "int",
+                        "str",
+                        "int",
+                        "int",
+                        "str",
+                        "int",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "date",
+                        "str",
+                        "str",
+                        "int",
+                        "date",
+                        "str",
+                        "int"                                           
+                    ],
+                    "dependen_tables": "dependent+order.csv",
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "ottoo.it.team",
+                        "from_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/order/{data_date}/enriched_order--{its_rnd_str}.parquet",
+                        "to_who": "dp.b2b.Layer2"
+                    },
+                    "Execution_Description": "ottoo it ekipleri tarafindan s3 e yuklenen file, alinip zenginlestirilir ve parquet formatinda kayit edilir..."
+                }                                                                                                                                                        
+            },  
+            "dependent+customer.csv": {
+                "enriched_customer.parquet": {
+                    "table_name": "customer",
+                    "py_function_name": "standart_transform",
+                    "file_format": "csv",
+                    "in_file_format": "csv",
+                    "out_file_format": "parquet",
+                    "date_col_format": "%Y-%m-%d %H:%M:%S.%f",
+                    "table_columns": [
+                        "Id",
+                        "CustomerGuid",
+                        "Username",
+                        "Email",
+                        "EmailToRevalidate",
+                        "AdminComment",
+                        "IsTaxExempt",
+                        "AffiliateId",
+                        "VendorId",
+                        "HasShoppingCartItems",
+                        "RequireReLogin",
+                        "FailedLoginAttempts",
+                        "CannotLoginUntilDateUtc",
+                        "Active",
+                        "Deleted",
+                        "IsSystemAccount",
+                        "SystemName",
+                        "LastIpAddress",
+                        "CreatedOnUtc",
+                        "LastLoginDateUtc",
+                        "LastActivityDateUtc",
+                        "RegisteredInStoreId",
+                        "BillingAddress_Id",
+                        "ShippingAddress_Id"
+                    ],
+                    "table_columns_types": [
+                        "int",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "str",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "date",
+                        "int",
+                        "int",
+                        "int",
+                        "str",
+                        "str",
+                        "date",
+                        "date",
+                        "date",
+                        "int",
+                        "int",
+                        "int"
+                    ],
+                    "dependen_tables": "dependent+customer.csv",
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "ottoo.it.team",
+                        "from_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/customer/{data_date}/enriched_customer--{its_rnd_str}.parquet",
+                        "to_who": "dp.b2b.Layer2"
+                    },
+                    "Execution_Description": "ottoo it ekipleri tarafindan s3 e yuklenen file, alinip zenginlestirilir ve parquet formatinda kayit edilir..."
+                }                                                                                                                                                        
+            },  
+            "dependent+product.csv": {
+                "enriched_product.parquet": {
+                    "table_name": "product",
+                    "py_function_name": "standart_transform",
+                    "file_format": "csv",
+                    "in_file_format": "csv",
+                    "out_file_format": "parquet",
+                    "date_col_format": "%Y-%m-%d %H:%M:%S.%f",
+                    "table_columns": [
+                        "Id",
+                        "ProductTypeId",
+                        "ParentGroupedProductId",
+                        "VisibleIndividually",
+                        "Name",
+                        "AdminComment",
+                        "ProductTemplateId",
+                        "VendorId",
+                        "ShowOnHomepage",
+                        "MetaKeywords",
+                        "MetaDescription",
+                        "MetaTitle",
+                        "AllowCustomerReviews",
+                        "ApprovedRatingSum",
+                        "NotApprovedRatingSum",
+                        "ApprovedTotalReviews",
+                        "NotApprovedTotalReviews",
+                        "SubjectToAcl",
+                        "LimitedToStores",
+                        "Sku",
+                        "ManufacturerPartNumber",
+                        "Gtin",
+                        "IsGiftCard",
+                        "GiftCardTypeId",
+                        "OverriddenGiftCardAmount",
+                        "RequireOtherProducts",
+                        "RequiredProductIds",
+                        "AutomaticallyAddRequiredProducts",
+                        "IsDownload",
+                        "DownloadId",
+                        "UnlimitedDownloads",
+                        "MaxNumberOfDownloads",
+                        "DownloadExpirationDays",
+                        "DownloadActivationTypeId",
+                        "HasSampleDownload",
+                        "SampleDownloadId",
+                        "HasUserAgreement",
+                        "UserAgreementText",
+                        "IsRecurring",
+                        "RecurringCycleLength",
+                        "RecurringCyclePeriodId",
+                        "RecurringTotalCycles",
+                        "IsRental",
+                        "RentalPriceLength",
+                        "RentalPricePeriodId",
+                        "IsShipEnabled",
+                        "IsFreeShipping",
+                        "ShipSeparately",
+                        "AdditionalShippingCharge",
+                        "DeliveryDateId",
+                        "IsTaxExempt",
+                        "TaxCategoryId",
+                        "IsTelecommunicationsOrBroadcastingOrElectronicServices",
+                        "ManageInventoryMethodId",
+                        "ProductAvailabilityRangeId",
+                        "UseMultipleWarehouses",
+                        "WarehouseId",
+                        "StockQuantity",
+                        "DisplayStockAvailability",
+                        "DisplayStockQuantity",
+                        "MinStockQuantity",
+                        "LowStockActivityId",
+                        "NotifyAdminForQuantityBelow",
+                        "BackorderModeId",
+                        "AllowBackInStockSubscriptions",
+                        "OrderMinimumQuantity",
+                        "OrderMaximumQuantity",
+                        "AllowedQuantities",
+                        "AllowAddingOnlyExistingAttributeCombinations",
+                        "NotReturnable",
+                        "DisableBuyButton",
+                        "DisableWishlistButton",
+                        "AvailableForPreOrder",
+                        "PreOrderAvailabilityStartDateTimeUtc",
+                        "CallForPrice",
+                        "Price",
+                        "OldPrice",
+                        "ProductCost",
+                        "CustomerEntersPrice",
+                        "MinimumCustomerEnteredPrice",
+                        "MaximumCustomerEnteredPrice",
+                        "BasepriceEnabled",
+                        "BasepriceAmount",
+                        "BasepriceUnitId",
+                        "BasepriceBaseAmount",
+                        "BasepriceBaseUnitId",
+                        "MarkAsNew",
+                        "MarkAsNewStartDateTimeUtc",
+                        "MarkAsNewEndDateTimeUtc",
+                        "HasTierPrices",
+                        "HasDiscountsApplied",
+                        "Weight",
+                        "Length",
+                        "Width",
+                        "Height",
+                        "AvailableStartDateTimeUtc",
+                        "AvailableEndDateTimeUtc",
+                        "DisplayOrder",
+                        "Published",
+                        "Deleted",
+                        "CreatedOnUtc",
+                        "UpdatedOnUtc",
+                        "Mf",
+                        "MfAdet",
+                        "MfAdetFazla",
+                        "Miad",
+                        "MiadDate",
+                        "KamuOdenen",
+                        "FiyatFarki",
+                        "IsHighlighted",
+                        "WebPrim",
+                        "CiroPrim"
+                    ],
+                    "table_columns_types": [
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "str",
+                        "str",
+                        "int",
+                        "int",
+                        "int",
+                        "str",
+                        "str",
+                        "str",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "str",
+                        "str",
+                        "str",
+                        "int",
+                        "int",
+                        "float",
+                        "int",
+                        "str",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "str",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "float",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "str",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "int",
+                        "date",
+                        "int",
+                        "float",
+                        "float",
+                        "float",
+                        "int",
+                        "float",
+                        "float",
+                        "int",
+                        "float",
+                        "int",
+                        "float",
+                        "int",
+                        "int",
+                        "date",
+                        "date",
+                        "int",
+                        "int",
+                        "float",
+                        "float",
+                        "float",
+                        "float",
+                        "date",
+                        "date",
+                        "int",
+                        "int",
+                        "int",
+                        "date",
+                        "date",
+                        "str",
+                        "int",
+                        "int",
+                        "str",
+                        "date",
+                        "float",
+                        "float",
+                        "float",
+                        "int",
+                        "float"
+                        
+                    ],
+                    "dependen_tables": "dependent+product.csv",
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "ottoo.it.team",
+                        "from_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/product/{data_date}/enriched_product--{its_rnd_str}.parquet",
+                        "to_who": "dp.b2b.Layer2"
+                    },
+                    "Execution_Description": "ottoo it ekipleri tarafindan s3 e yuklenen file, alinip zenginlestirilir ve parquet formatinda kayit edilir..."
+                }                                                                                                                                                        
+            }                                                                                                                                                                   
+        }
+    },
+    "Decode_1": {
+        "Description": "Sadece kendisi kullanilarak uretilebilecek yeni tablolarin uretilmesi. Key names of Exports_of_layer is dependent+files",
+        "imports_of_layer": {
+            "dependent+enriched_customer.parquet": {
+                "dependents": [
+                    "parquet_data/daily/{state}/customer/{data_date}/enriched_customer--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket":  "data.platform.b2b.eczastok",
+                    "from_who": "Layer",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "dependent+enriched_order.parquet": {
+                "dependents": [
+                    "parquet_data/daily/{state}/order/{data_date}/enriched_order--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket":  "data.platform.b2b.eczastok",
+                    "from_who": "Layer",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "dependent+enriched_product.parquet": {
+                "dependents": [
+                    "parquet_data/daily/{state}/product/{data_date}/enriched_product--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket":  "data.platform.b2b.eczastok",
+                    "from_who": "Layer",
+                    "from_region_name": "eu-central-1"
+                }
+            }             
+        },
+        "exports_of_layer": {
+            "dependent+enriched_customer.parquet": {
+                "report_1_Daily_Customer_1_metrics.csv": {
+                    "location_meta": {
+                        "from_bucket":  "data.platform.b2b.eczastok",
+                        "from_who": "Layer1",
+                        "to_bucket":  "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "final_csv_data/daily/{state}/export_files/{data_date}/report_1_Daily_Customer_1_metrics--{its_rnd_str}.csv",
+                        "to_who": "Final"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "csv",
+                    "dependen_tables": "dependent+enriched_customer.parquet",
+                    "py_function_name": "report_1_Daily_Customer_1_metrics",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/report_1_Daily_Customer_1_metrics/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/report_1_Daily_Customer_1_metrics/conversion_working_sql.sql",
+                        "description": "Pure python babus"
+                    }
+                }        
+            },
+            "dependent+enriched_order.parquet": {
+                "report_2_Daily_Order_1_metrics.csv": {
+                    "location_meta": {
+                        "from_bucket":  "data.platform.b2b.eczastok",
+                        "from_who": "Layer1",
+                        "to_bucket":  "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "final_csv_data/daily/{state}/export_files/{data_date}/report_2_Daily_Order_1_metrics--{its_rnd_str}.csv",
+                        "to_who": "Final"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "csv",
+                    "dependen_tables": "dependent+enriched_order.parquet",
+                    "py_function_name": "report_2_Daily_Order_1_metrics",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/report_2_Daily_Order_1_metrics/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/report_2_Daily_Order_1_metrics/conversion_working_sql.sql",
+                        "description": "Pure python babus"
+                    }
+                }        
+            },
+            "dependent+enriched_product.parquet": {
+                "report_1_Daily_Product_Summary_1_view.csv": {
+                    "location_meta": {
+                        "from_bucket":  "data.platform.b2b.eczastok",
+                        "from_who": "Layer1",
+                        "to_bucket":  "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "final_csv_data/daily/{state}/export_files/{data_date}/report_1_Daily_Product_Summary_1_view--{its_rnd_str}.csv",
+                        "to_who": "Final"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "csv",
+                    "dependen_tables": "dependent+enriched_product.parquet",
+                    "py_function_name": "report_1_Daily_Product_Summary_1_view",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/report_1_Daily_Product_Summary_1_view/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/report_1_Daily_Product_Summary_1_view/conversion_working_sql.sql",
+                        "description": "Pure python babus"
+                    }
+                },
+                "report_1_Weekly_Product_Summary_1_view.csv": {
+                    "location_meta": {
+                        "from_bucket":  "data.platform.b2b.eczastok",
+                        "from_who": "Layer1",
+                        "to_bucket":  "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "final_csv_data/daily/{state}/export_files/{data_date}/report_1_Weekly_Product_Summary_1_view--{its_rnd_str}.csv",
+                        "to_who": "Final"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "csv",
+                    "dependen_tables": "dependent+enriched_product.parquet",
+                    "py_function_name": "report_1_Weekly_Product_Summary_1_view",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/report_1_Weekly_Product_Summary_1_view/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/report_1_Weekly_Product_Summary_1_view/conversion_working_sql.sql",
+                        "description": "Pure python babus"
+                    }
+                }                         
+            }               
+        }
+    },
+    "Decode_2": {
+        "Description": "exports_of_layer keys are dependent_table names. Inner keys are exported file names with format. ",
+        "imports_of_layer": {         
+            "m_dependent+enriched_product_and_order_item_join": {
+                "dependents": [                    
+                    "parquet_data/daily/{state}/product/{data_date}/enriched_product--latest.parquet",
+                    "parquet_data/daily/{state}/order_item/{data_date}/enriched_order_item--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "Layer2.1",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_product_and_order_item_and_order_join": {
+                "dependents": [                    
+                    "parquet_data/daily/{state}/product/{data_date}/enriched_product--latest.parquet",
+                    "parquet_data/daily/{state}/order_item/{data_date}/enriched_order_item--latest.parquet",
+                    "parquet_data/daily/{state}/order/{data_date}/enriched_order--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "Layer2.1",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_order_and_order_item_join": {
+                "dependents": [                    
+                    "parquet_data/daily/{state}/order/{data_date}/enriched_order--latest.parquet",                   
+                    "parquet_data/daily/{state}/order_item/{data_date}/enriched_order_item--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "Layer2.1",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_customer_and_order_join": {
+                "dependents": [                    
+                    "parquet_data/daily/{state}/customer/{data_date}/enriched_customer--latest.parquet",
+                    "parquet_data/daily/{state}/order/{data_date}/enriched_order--latest.parquet"                                 
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "Layer2.1",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_customer_vendor_ccrmapping_customer_role_join": {
+                "dependents": [                    
+                    "parquet_data/daily/{state}/vendor/{data_date}/enriched_vendor--latest.parquet",
+                    "parquet_data/daily/{state}/customer/{data_date}/enriched_customer--latest.parquet",        
+                    "parquet_data/daily/{state}/customer_customerRole_mapping/{data_date}/enriched_customer_customerRole_mapping--latest.parquet",        
+                    "parquet_data/daily/{state}/customer_role/{data_date}/enriched_customer_role--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "Layer2.1",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_customer_and_vendor_join": {
+                "dependents": [                    
+                    "parquet_data/daily/{state}/vendor/{data_date}/enriched_vendor--latest.parquet",
+                    "parquet_data/daily/{state}/customer/{data_date}/enriched_customer--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "Layer2.1",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_customer_vendor_product_ccrmapping_customer_role_join": {
+                "dependents": [                    
+                    "parquet_data/daily/{state}/vendor/{data_date}/enriched_vendor--latest.parquet",
+                    "parquet_data/daily/{state}/customer/{data_date}/enriched_customer--latest.parquet",        
+                    "parquet_data/daily/{state}/product/{data_date}/enriched_product--latest.parquet",              
+                    "parquet_data/daily/{state}/customer_customerRole_mapping/{data_date}/enriched_customer_customerRole_mapping--latest.parquet",        
+                    "parquet_data/daily/{state}/customer_role/{data_date}/enriched_customer_role--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "Layer2.1",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_product_customer_vendor_product_category_mapping_join": {
+                "dependents": [                    
+                    "parquet_data/daily/{state}/product/{data_date}/enriched_product--latest.parquet",              
+                    "parquet_data/daily/{state}/customer/{data_date}/enriched_customer--latest.parquet",        
+                    "parquet_data/daily/{state}/vendor/{data_date}/enriched_vendor--latest.parquet",
+                    "parquet_data/daily/{state}/product_category_mapping/{data_date}/enriched_product_category_mapping--latest.parquet"                
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "Layer2.1",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_customer_customer_customerRole_mapping_customer_role_join": {
+                "dependents": [                    
+                    "parquet_data/daily/{state}/customer/{data_date}/enriched_customer--latest.parquet",                
+                    "parquet_data/daily/{state}/customer_customerRole_mapping/{data_date}/enriched_customer_customerRole_mapping--latest.parquet",        
+                    "parquet_data/daily/{state}/customer_role/{data_date}/enriched_customer_role--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "Layer2.1",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_order_customer_customerRole_mapping_customer_role_join": {
+                "dependents": [                    
+                    "parquet_data/daily/{state}/order/{data_date}/enriched_order--latest.parquet",                
+                    "parquet_data/daily/{state}/customer_customerRole_mapping/{data_date}/enriched_customer_customerRole_mapping--latest.parquet",        
+                    "parquet_data/daily/{state}/customer_role/{data_date}/enriched_customer_role--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "Layer2.1",
+                    "from_region_name": "eu-central-1"
+                }
+            }
+
+        },
+        "exports_of_layer": {
+       
+            "m_dependent+enriched_product_and_order_item_join": {
+                "enriched_product_and_order_item_join.parquet": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who":  "Layer2.1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_product_and_order_item_join--{new_rnd_str}.parquet",
+                        "to_who": "data.platform.b2b.eczastok.Alu1"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "parquet",
+                    "dependent_tables": "m_dependent+enriched_product_and_order_item_join",
+                    "py_function_name": "enriched_product_and_order_item_join",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }
+            },
+            "m_dependent+enriched_product_and_order_item_and_order_join": {
+                "enriched_product_and_order_item_and_order_join.parquet": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who":  "Layer2.1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_product_and_order_item_and_order_join--{new_rnd_str}.parquet",
+                        "to_who": "data.platform.b2b.eczastok.Alu1"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "parquet",
+                    "dependent_tables": "m_dependent+enriched_product_and_order_item_and_order_join",
+                    "py_function_name": "enriched_product_and_order_item_and_order_join",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }
+            },
+            "m_dependent+enriched_order_and_order_item_join": {
+                "enriched_order_and_order_item_join.parquet": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who":  "Layer2.1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_order_and_order_item_join--{new_rnd_str}.parquet",
+                        "to_who": "data.platform.b2b.eczastok.Alu1"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "parquet",
+                    "dependent_tables": "m_dependent+enriched_order_and_order_item_join",
+                    "py_function_name": "enriched_order_and_order_item_join",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }
+            },
+            "m_dependent+enriched_customer_and_order_join": {
+                "enriched_customer_and_order_join.parquet": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who":  "Layer2.1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_customer_and_order_join--{new_rnd_str}.parquet",
+                        "to_who": "data.platform.b2b.eczastok.Alu1"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "parquet",
+                    "dependent_tables": "m_dependent+enriched_customer_and_order_join",
+                    "py_function_name": "enriched_customer_and_order_join",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }
+            },
+            "m_dependent+enriched_customer_vendor_ccrmapping_customer_role_join": {
+                "enriched_customer_vendor_ccrmapping_customer_role_join.parquet": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who":  "Layer2.1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_customer_vendor_ccrmapping_customer_role_join--{new_rnd_str}.parquet",
+                        "to_who": "data.platform.b2b.eczastok.Alu1"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "parquet",
+                    "dependent_tables": "m_dependent+enriched_customer_vendor_ccrmapping_customer_role_join",
+                    "py_function_name": "enriched_customer_vendor_ccrmapping_customer_role_join",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }
+            },
+            "m_dependent+enriched_customer_and_vendor_join": {
+                "enriched_customer_and_vendor_join.parquet": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who":  "Layer2.1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_customer_and_vendor_join--{new_rnd_str}.parquet",
+                        "to_who": "data.platform.b2b.eczastok.Alu1"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "parquet",
+                    "dependent_tables": "m_dependent+enriched_customer_and_vendor_join",
+                    "py_function_name": "enriched_customer_and_vendor_join",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }
+            },
+            "m_dependent+enriched_customer_vendor_product_ccrmapping_customer_role_join": {
+                "enriched_customer_vendor_product_ccrmapping_customer_role_join.parquet": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who":  "Layer2.1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_customer_vendor_product_ccrmapping_customer_role_join--{new_rnd_str}.parquet",
+                        "to_who": "data.platform.b2b.eczastok.Alu1"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "parquet",
+                    "dependent_tables": "m_dependent+enriched_customer_vendor_product_ccrmapping_customer_role_join",
+                    "py_function_name": "enriched_customer_vendor_product_ccrmapping_customer_role_join",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }
+            },
+            "m_dependent+enriched_product_customer_vendor_product_category_mapping_join": {
+                "enriched_product_customer_vendor_product_category_mapping_join.parquet": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who":  "Layer2.1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_product_customer_vendor_product_category_mapping_join--{new_rnd_str}.parquet",
+                        "to_who": "data.platform.b2b.eczastok.Alu1"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "parquet",
+                    "dependent_tables": "m_dependent+enriched_product_customer_vendor_product_category_mapping_join",
+                    "py_function_name": "enriched_product_customer_vendor_product_category_mapping_join",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }
+            },
+            "m_dependent+enriched_customer_customer_customerRole_mapping_customer_role_join": {
+                "enriched_customer_customer_customerRole_mapping_customer_role_join.parquet": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who":  "Layer2.1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_customer_customer_customerRole_mapping_customer_role_join--{new_rnd_str}.parquet",
+                        "to_who": "data.platform.b2b.eczastok.Alu1"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "parquet",
+                    "dependent_tables": "m_dependent+enriched_customer_customer_customerRole_mapping_customer_role_join",
+                    "py_function_name": "enriched_customer_customer_customerRole_mapping_customer_role_join",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }
+            },
+            "m_dependent+enriched_order_customer_customerRole_mapping_customer_role_join": {
+                "enriched_order_customer_customerRole_mapping_customer_role_join.parquet": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who":  "Layer2.1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_path": "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_order_customer_customerRole_mapping_customer_role_join--{new_rnd_str}.parquet",
+                        "to_who": "data.platform.b2b.eczastok.Alu1"
+                    },
+                    "in_file_format": "parquet",
+                    "out_file_format": "parquet",
+                    "dependent_tables": "m_dependent+enriched_order_customer_customerRole_mapping_customer_role_join",
+                    "py_function_name": "enriched_order_customer_customerRole_mapping_customer_role_join",
+                    "operations_on_this_file": {
+                        "conversion_orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "conversion_working_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }
+            }                     
+      
+        }
+    },
+    "Alu_1": {
+        "Description": "exports_of_layer keys are dependent_table names. Inner keys are exported file names with format. ",
+        "imports_of_layer": {
+            "m_dependent+enriched_product_and_order_item_join.parquet": {
+                "dependents": [
+                    "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_product_and_order_item_join--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "layer2.2",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_customer_customer_customerRole_mapping_customer_role_join.parquet": {
+                "dependents": [
+                    "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_customer_customer_customerRole_mapping_customer_role_join--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "layer2.2",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_order_customer_customerRole_mapping_customer_role_join.parquet": {
+                "dependents": [
+                    "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_order_customer_customerRole_mapping_customer_role_join--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "layer2.2",
+                    "from_region_name": "eu-central-1"
+                }
+            },
+            "m_dependent+enriched_customer_vendor_product_ccrmapping_customer_role_join.parquet": {
+                "dependents": [
+                    "parquet_data/daily/{state}/multi_file_dependent/{data_date}/enriched_customer_vendor_product_ccrmapping_customer_role_join--latest.parquet"
+                ],
+                "location_meta": {
+                    "from_bucket": "data.platform.b2b.eczastok",
+                    "from_who": "layer2.2",
+                    "from_region_name": "eu-central-1"
+                }
+            }
+
+        },
+        "exports_of_layer": {
+            "m_dependent+enriched_product_and_order_item_join.parquet": {
+                "report_3_Daily_Product_1_metrics.csv": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "Decode2",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_path": "final_csv_data/daily/{state}/export_files/{data_date}/report_3_Daily_Product_1_metrics--{new_rnd_str}.csv",
+                        "to_who": "Final"
+                    },
+                    "dependent_tables": "enriched_product_and_order_item_join.parquet",
+                    "in_file_format": "parquet",
+                    "out_file_format": "csv",
+                    "py_function_name": "report_3_Daily_Product_1_metrics",
+                    "operations_on_this_file": {
+                        "orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "reorganize_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }                              
+
+            },
+            "m_dependent+enriched_customer_customer_customerRole_mapping_customer_role_join.parquet": {
+                "report_1_Daily_Customer_11_metrics.csv": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "Decode2",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_path": "final_csv_data/daily/{state}/export_files/{data_date}/report_1_Daily_Customer_11_metrics--{new_rnd_str}.csv",
+                        "to_who": "Final"
+                    },
+                    "dependent_tables": "enriched_customer_customer_customerRole_mapping_customer_role_join.parquet",
+                    "in_file_format": "parquet",
+                    "out_file_format": "csv",
+                    "py_function_name": "report_1_Daily_Customer_11_metrics",
+                    "operations_on_this_file": {
+                        "orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "reorganize_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }                              
+
+            },
+            "m_dependent+enriched_order_customer_customerRole_mapping_customer_role_join.parquet": {
+                "report_5_Daily_Order_City_Summary_1_metrics.csv": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "Decode2",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_path": "final_csv_data/daily/{state}/export_files/{data_date}/report_5_Daily_Order_City_Summary_1_metrics--{new_rnd_str}.csv",
+                        "to_who": "Final"
+                    },
+                    "dependent_tables": "enriched_order_customer_customerRole_mapping_customer_role_join.parquet",
+                    "in_file_format": "parquet",
+                    "out_file_format": "csv",
+                    "py_function_name": "report_5_Daily_Order_City_Summary_1_metrics",
+                    "operations_on_this_file": {
+                        "orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "reorganize_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }                              
+
+            },
+            "m_dependent+enriched_customer_vendor_product_ccrmapping_customer_role_join.parquet": {
+                "report_4_Daily_Active_Customer_Summary_view.csv": {
+                    "location_meta": {
+                        "from_bucket": "data.platform.b2b.eczastok",
+                        "from_who": "Decode2",
+                        "from_region_name": "eu-central-1",
+                        "to_region_name": "eu-central-1",
+                        "to_bucket": "data.platform.b2b.eczastok",
+                        "to_path": "final_csv_data/daily/{state}/export_files/{data_date}/report_4_Daily_Active_Customer_Summary_view--{new_rnd_str}.csv",
+                        "to_who": "Final"
+                    },
+                    "dependent_tables": "enriched_customer_vendor_product_ccrmapping_customer_role_join.parquet",
+                    "in_file_format": "parquet",
+                    "out_file_format": "csv",
+                    "py_function_name": "report_4_Daily_Active_Customer_Summary_view",
+                    "operations_on_this_file": {
+                        "orjin_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_orjin_sql.sql",
+                        "reorganize_sql_fp": "./conversion_files/detail_and_sales_VR/conversion_working_sql.sql",
+                        "description": "pure python ile mi bu dosya uretilmis yoksa sql mi abanilmis yorumlar."
+                    }
+                }                              
+
+            }            
+        }
+    },
+    "Write_Back": {
+        "target_db": {
+            "comes_from_status": {
+                "report_2_Daily_Member_Betting_Type_Sport_Bet_Summary_1_segment" : 21                      
+            },
+            "db_table_name": {
+                "segment_Member_Betting_Type_Coupon_Summary": "[Artemis].[Segment].[Member_Betting_Type_Coupon_Summary]"
+            },
+            "colomns": {
+                
+                "Is_Lucky_Retailer": "Is_Lucky_Retailer"
+              },
+            "colomns_types" : {
+               
+                "New_business_Name": "str"
+              },
+            "mssql_config": {
+                "server": "",
+                "user": "",
+                "password": "",
+                "database": "",
+                "host": ""
+            }
+        }
+    }
+}
+
+

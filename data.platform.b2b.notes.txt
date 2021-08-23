@@ -1,0 +1,78 @@
+
+
+
+4- event-lig ve event-lig-betting type rapırlarında bilet tutarları eklenmeli
+8-  Retailer tablosunda boşluklar var 
+
+
+
+
+tag : 
+data.platform.b2b	 eczastok
+Owner  Data_Team
+
+s3:
+data.platform.b2b.eczastok	
+	tag
+	data.platform.b2b	 eczastok
+	Owner  Data_Team
+
+sqs:
+dp_b2b_eczastok-Prod_Fetch_1
+dp_b2b_eczastok-Prod_Decode_1
+dp_b2b_eczastok-Prod_Decode_2
+dp_b2b_eczastok-Prod_Decode_2.fifo
+dp_b2b_eczastok-Prod_Alu_1
+dp_b2b_eczastok-Prod_Write_Back_1
+	Tag
+	 data.platform.b2b	 eczastok
+	 Owner  Data_Team
+
+dp_b2b-System_Message_Queue
+dp_b2b-System_Email_Queue_Listener
+
+
+Lambda:
+dp_b2b_eczastok-File_Maneger
+dp_b2b_eczastok-Write_Back
+
+dp_b2b_eczastok-File_Trigger_for_Decode2
+dp_b2b_eczastok-Decode2_fifo_2_Decode2
+
+
+	Tag;
+	 data.platform.b2b	 eczastok
+	 Owner  Data_Team
+
+
+dp_b2b-Cluster_Trigger  (eczastok için json alcak)
+dp_b2b-System_Message_Queue_Listener
+dp_b2b-System_Email_Queue_Listener
+	Tag
+	 data.platform.b2b	 System
+	 Owner  Data_Team
+
+
+Cluster_Maneger
+Kurulmalı.
+
+
+Db COnneciton:
+eczastok-mysql-test
+server=eczastok-mysql-test.c4wxkzrdt8ra.eu-central-1.rds.amazonaws.com;database=eczastokdb;Max Pool Size=500;allowuservariables=True;user 
+
+{
+	host : eczastok-mysql-test.c4wxkzrdt8ra.eu-central-1.rds.amazonaws.com,
+	id=admin,
+	password=DhFxpWJX67pBsiVp32yO,
+	database=data_platform_b2b_log_db
+}
+
+
+Slack_Hesabı:
+
+
+
+FarmAPI
+
+

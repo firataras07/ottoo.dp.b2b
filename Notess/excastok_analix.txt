@@ -1,0 +1,71 @@
+1-Product Tablosu  (AKTİF DEPO SAYISI)
+2-Vendor , customer , cr mapping, product  (AKTİF ECZA DEPOSU)
+3-Vendor , customer , cr mapping, product  (AKTİF FİRMA)
+4-Vendor , customer , cr mapping, product  (AKTİF İTRİYAT DEPOSU)
+6-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (ANNE & BEBEK)
+7-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (BESİN TAKVİYESİ)
+8-Customer,Vendor  (HAFTALIK DEPO)
+9-Customer,Vendor,customer-customerrolemapping  (HAFTALIK ECZA DEPOSU)
+10-Customer,Vendor,customer-customerrolemapping  (HAFTALIK FİRMA)
+11-Customer,Vendor,customer-customerrolemapping  (HAFTALIK İTRİYAT DEPOSU)
+12-Order,Orderitem  (HAFTALIK SATIŞ)
+13-Product, orderitem, order  (KATEGORİSİZ)
+14-Customer,Genericattribute  (KAYIT OLAN ECZANELER)
+15-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (KİŞİSEL BAKIM)
+16-Customer  (LOGIN YAPMAMIŞ)
+17-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (MEDİKAL)
+18-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (REÇETELİ İLAÇ)
+19-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (SAĞLIK)
+20-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (SARF MALZEMELERİ)
+21-Order  (SİPARİŞ VEREN ECZANE)
+22-Customer,Order  (SİPARİŞ VERMEMİŞ)
+23-OrderVendorRewiev  (YORUM VE PUAN)
+
+
+----- kesişim ------ gerekli tablolar
+Product
+Vendor , customer , cr_mapping, product
+AllCategoriesByParent, category, Order, pcm, product, OrderItem
+Customer, Vendor
+Customer, Vendor, customer-customerrolemapping
+Order, Orderitem 
+Product, orderitem, order
+Customer,Genericattribute
+Customer
+Order
+Customer,Order
+OrderVendorRewiev
+
+
+------ gerekli tablolar -----
+Product
+Vendor
+Customer
+cr_mapping
+Order
+Orderitem
+OrderVendorRewiev
+AllCategoriesByParent
+category
+pcm
+customer-customerrolemapping
+Genericattribute
+
+
+----- Çok kullanılan Whereler -----
+ WHERE  (     (0 = `product`.`deleted`)
+       AND    (0 <> `product`.`published`)
+       AND    (`product`.`vendorid` > 0)
+
+ WHERE  
+              ((0 = `p`.`deleted`)
+       AND    (0 <> `p`.`published`)
+       AND    (`p`.`vendorid` > 0)
+       AND    (`p`.`producttypeid` = 5)
+       AND    (`c`.`active` = 1)           
+
+ WHERE    ((`p`.`producttypeid` = 10)
+         AND      (`p`.`parentgroupedproductid` = 0)
+         AND      (0 <> `p`.`published`)
+         AND      (0 = `p`.`deleted`)
+         AND      (0 = `o`.`deleted`)       

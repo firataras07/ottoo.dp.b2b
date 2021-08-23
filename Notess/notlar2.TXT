@@ -1,0 +1,59 @@
+product --> 117,740
+  her gün alınacak tamamı
+
+vendor --> 105 
+   tamamı alınacak her gün
+
+Customer --> 1,150,000
+cr mapping --> 1162580
+
+order --> 11,000
+   günlük alınabilir
+
+orderitem --> 58,000
+   günlük tamamı alınacak ( createdonutc columnu yok)
+
+category --> 5271
+   günlük tamamı alınacak
+
+ordervendorrewiev --> 122
+    sadece yeni gelenler alınacak
+
+Product-Category-mapping --> 24664
+    hergün tamamı alınacak (createdonutc kolonu yok)
+
+GenericAttribute --> 1,088,459
+    createdandupdate kolonuna göre her gün yeni gelenler alınabilir.
+
+
+
+
+[Dün 15:07] Uluç Furkan Vardar
+    Product
+Vendor
+Customer
+cr_mapping
+Order
+Orderitem
+OrderVendorRewiev
+AllCategoriesByParent
+category
+pcm
+customer-customerrolemapping
+Genericattribute
+
+
+
+İş Nerede Yapılacak?Milliyet  AMP
+
+İşin AmacıWeb kullanıcılarının AMP davranışlarının takip edilmesi.Kabaca istediğimiz vermiş olduğum endpointleri kullanarak amp ve mobilapp kullanan kullanıcıların görüntüleme yani pageView eventini ve videoView eventini gerçekleştirdiklerinde birer adet GET request göndermeniz. Bu requestin aldığı bazı query parametreleri var. Mümkün olduğu derecede bu parametreler doldurulursa bizim yararımıza olacaktır.
+
+Doküman Linki: https://documenter.getpostman.com/view/5372602/T1DiGgBA#2b46f488-7930-4972-8eb6-a8021edccb0d
+
+Yapılması Gerekenler
+
+AMP için get methodlu endpoint kullanılacak. Bunların detayları aşağıdadır
+
+Query parametreleri olarak sadece C1 den C19 a kadar olan parametreler kullanılmalı.
+
+Özellikle 'c1' ve 'c19' parametrelerinin kesinlikle doldurulduğundan emin olunması gerekiyor.

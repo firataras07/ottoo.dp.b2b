@@ -1,0 +1,78 @@
+Selamlar,
+ 
+Belirlenen tabloları aşağıdaki şekilde bizim tarafa periyodik olarak yükleyebilirsiniz.
+
+Öncelikle veriyi aws hesabımızda “Frankfurt" bölgesinde saklıyor olacağız.
+Kullandığımız bucket’ın adı : “va7.bet.data”
+
+
+
+
+---------------------------- IAM ----------------------------
+User name: "va7.bed--s3.custom.only-USER"
+Policy name : "va7.bed--s3.custom.only--Policy"
+
+
+Access Key ID : "AKIAQM2JJU44UPZY54IS"
+Secret Access Key : "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"
+
+---------------------------- INFO ----------------------------
+
+---- Mess 1 -----
+
+Merhabalar,
+Görüşmemizin ardından size gerekli aktarımları yapıyor olacağım.
+Öncelikle sizin taraftan gelen tüm veriyi ve iş akışını AWS'nin "eu-central-1" kodu ile tanımladığı Frankfurt'ta bulunan merkezinde tutuyor olacağız.
+
+İlk etapta sizden günlük olarak düzenli periyotlarda veri alabilmemiz için yapmayı planladığımız akışı basit bir komutla göstereyim.
+
+
+(Temsili komut) ;
+aws s3 cp ./market_data.txt s3://va7.bed.data/data/daily/prod/market_data/2020/11/16/market_data--1617744519003611802-20210407002839.csv --profile va7.user
+
+
+Bu komut satırlarıyla bize veri gönderebilmeniz için alakalı server a kurmanız gereken ve configure etmeniz gereken basit bir iki işlem var.
+1. AWS CLI kurulumu
+	indirme url'i :
+	https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html
+	* Bu url üzerinden alakalı işletim sistemine göre indirmeyi sağlayabilirsiniz.
+
+	Örnek Mac-Os Kurulum Komutu
+		curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+		sudo installer -pkg AWSCLIV2.pkg -target /
+
+2. Credentials Ayarları
+	Terminale "aws configure --profile va7.user" komutunu yapıştırın ve run edin. Sizden bazı bilgileri doldurmanızı isteyecek. Size gönderdiğim config dosyasını kullanarak istenilen bilgileri doldurun. 
+	(Örnek ss : https://prnt.sc/vk0g78)
+
+	Bu şekilde serverda aws komutu ile birlikte çalışabilen, sizin datanızı sakladığımız 'va7.bed.data' S3 bucket'ına sadece 'putObject' yetkisine sahip bir profil tanımlanmış olacak.
+
+3. Bize verinin aktarılması.
+	* Temsili komutları belli bir düzende oluşturmanızı istiyor olacağım. Gerekli format bilgisini aşağıda paylaştım. 
+
+	Komut Formatı ; 
+	aws s3 cp ./{table_name}.txt s3://va7.bed.data/data/daily/{state_name}/{table_name}/{year}/{month}/{day}/{table_name}--{file_rnd_str}-{session_rnd_str}.txt --profile va7.user
+
+    (
+        https://regex101.com/ (python) üzerinden test edebilecğeiniz regexide vereyim.
+        ürettiğiniz object key aşağıdaki regex'e uyduğu sürece bir sıkıntı olmayacaktır yüklemelerinize dair.
+        (?P<folder>data)/(?P<period>daily)/(?P<state>prod|test|dev)/(?P<root_name>[^\/]*)/(?P<data_date>(?P<year>20\d{2})/(?P<month>0[1-9]|1[012])/(?P<day>0[1-9]|[12][0-9]|3[01]))/(?P<table_name>(?P=root_name))--(?P<its_rnd_str>(?P<file_rnd_str>[^\/-]*)-(?P<session_rnd_str>[^\/-]*))\.(?P<file_type>csv)$
+    )
+
+	Desc ; 
+	table_name    : Düzenli periyotlarda sizden almaya karar verdiğimiz  tabloların, tekil ve uzun süreçte sabit olan küçük karakter içeren, özel karakterler bulundurmayan ve boşluksuz (_ ile ayrılmış) metin halleri.
+	state_name    : "prod", "dev", "test" olmak üzere 3 state'te çalışmayı planlıyorum bu projede. (Sizden ricam ilk testlerinizde veri yükleme testlerinizde 'test' stateini kullanmanız. Komutları hazırlayıp günlük aktarıma hazır hale geldiğinizde, belirlediğimiz bir saatte veriyi düzenli olarak 'prod' stateni kullanabilirsiniz. 'dev' bana ait olan kısım olacak. Veri yükleme testlerinizi bana sorarak doğrulayabilirsiniz. Ben kontrol edebilirim. Ama hata almadığınız sürece sıkıntı olmayacaktır.)
+	year 	      : Veri paketine ait yıl 
+	month 	      : Veri paketine ait ay  ,(01,02,03....21....30,31) tek haneli ayların başına '0' koyarak iki haneli haline getirmek önemli
+	day 	      : Veri paketine ait gün ,(01,02,03....21....30,31) tek haneli günlerin başına '0' koyarak iki haneli haline getirmek önemli
+	its_rnd_str : Aynı gün içerisinde farklı veri yükleme durumuna karşın korunma için bir random string.  içerisinde iki adet id bulunuyor. birisi her filea özgü random str birisi ise yükleme yapılan sessionda ait bir random string. ikisinin arasında '-' mevcut.
+
+
+	* Daily olarak bir kırılım olma sebebi belki daha sonra farklı intervallerde veri almamız gerekebileceği durumlardan dolayı olacak. 
+
+Size vermiş olduğum kullanıcı ile yüklediğiniz veriyi "aws s3 ls " komutuyla listeleyebilirsiniz.
+En yakın zamanda sizi ekleyeceğim slack channellarından yüklediğiniz veriyi yüklediğiniz an bildirim alabileceksiniz.
+
+
+Eğer ek sorularınız olursa cevaplamaktan keyif duyarım. 
+İyi günler.

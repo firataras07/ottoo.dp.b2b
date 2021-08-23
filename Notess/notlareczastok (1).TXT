@@ -1,0 +1,358 @@
+Alınması gereken tablolar:
+
+1-Product Tablosu  (AKTİF DEPO SAYISI)
+ AktifDepoSayısı count(DISTINCT `product`.`vendorid`)
+ begin date,end date,period,number of period 
+ WHERE  ((
+                     0 = `product`.`deleted`)
+       AND    (
+                     0 <> `product`.`published`)
+       AND    (
+                     `product`.`vendorid` > 0)
+       AND    (
+                     `product`.`producttypeid` = 5))
+
+2-Vendor , customer , cr mapping, product  (AKTİF ECZA DEPOSU)
+ count(DISTINCT `v`.`id`)  AS `aktifeczadeposu` 
+ begin date,end date,period,number of period
+ WHERE  (( 0 = `p`.`deleted`)
+       AND    (0 <> `p`.`published`)
+       AND    (`p`.`vendorid` > 0)
+       AND    (`p`.`producttypeid` = 5)
+       AND    (`c`.`active` = 1)
+       AND    (`cr`.`customerrole_id` = 91))
+  
+
+3-Vendor , customer , cr mapping, product  (AKTİF FİRMA)
+ count(DISTINCT `v`.`id`) AS `aktiffirmasayisi` 
+ begin date,end date,period,number of period
+ WHERE  ((0 = `p`.`deleted`)
+       AND    (0 <> `p`.`published`)
+       AND    (`p`.`vendorid` > 0)
+       AND    (`p`.`producttypeid` = 5)
+       AND    (`c`.`active` = 1)
+       AND    (`cr`.`customerrole_id` = 92))
+
+4-Vendor , customer , cr mapping, product  (AKTİF İTRİYAT DEPOSU)
+ count(DISTINCT `v`.`id`) AS `aktifitriyatdeposu` 
+ begin date,end date,period,number of period
+ WHERE  ((0 = `p`.`deleted`)
+       AND    ( 0 <> `p`.`published`)
+       AND    (`p`.`vendorid` > 0)
+       AND    (`p`.`producttypeid` = 5)
+       AND    (`c`.`active` = 1)
+       AND    (`cr`.`customerrole_id` = 93))
+
+5-AllCategoriesByParent --> cte , category
+ 
+
+6-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (ANNE & BEBEK)
+  begin date,end date,period,number of period
+ `c`.`NAME` AS `name2`,
+  count(DISTINCT `p`.`id`) AS `ilansayisi2`,
+  sum(`oi`.`quantity`)  AS `satismiktari2`,
+  sum(`oi`.`priceincltax`) AS `satistutari2`
+  FROM   `product`
+                WHERE  (( `product`.`producttypeid` = 5)
+                       AND    ( `product`.`parentgroupedproductid` <> 0)
+                       AND    ( 0 <> `product`.`published`)
+                       AND    ( 0 = `product`.`deleted`))) `p2`
+ ON      (( `p`.`id` = `p2`.`parentgroupedproductid`)))
+ 
+ WHERE    ((`p`.`producttypeid` = 10)
+         AND      (`p`.`parentgroupedproductid` = 0)
+         AND      (0 <> `p`.`published`)
+         AND      (0 = `p`.`deleted`)
+         AND      (0 = `o`.`deleted`)
+         AND      (`o`.`createdonutc` >= '2020-10-24')
+         AND      (`c`.`NAME` = 'Anne & Bebek'))
+
+ 
+
+7-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (BESİN TAKVİYESİ)
+  begin date,end date,period,number of period
+ `c`.`NAME` AS `name2`,
+  count(DISTINCT `p`.`id`) AS `ilansayisi2`,
+  sum(`oi`.`quantity`)  AS `satismiktari2`,
+  sum(`oi`.`priceincltax`) AS `satistutari2`
+  FROM   `product`
+                WHERE  ((`product`.`producttypeid` = 5)
+                       AND    (`product`.`parentgroupedproductid` <> 0)
+                       AND    (0 <> `product`.`published`)
+                       AND    ( 0 = `product`.`deleted`))) `p2`
+ON      ((`p`.`id` = `p2`.`parentgroupedproductid`)))
+ 
+ WHERE    ((`p`.`producttypeid` = 10)
+         AND      (`p`.`parentgroupedproductid` = 0)
+         AND      (0 <> `p`.`published`)
+         AND      (0 = `p`.`deleted`)
+         AND      (0 = `o`.`deleted`)
+         AND      (`o`.`createdonutc` >= '2020-10-24')
+         AND      (`c`.`NAME` = 'Besin Takviyesi'))
+
+
+8-Customer,Vendor  (HAFTALIK DEPO)
+ begin date,end date,period,number of period
+ WHERE     ((`c`.`vendorid` <> 0)
+          AND       (`c`.`active` = 1)
+          AND       (`c`.`createdonutc` >= '2020-10-24'))
+ GROUP BY  `baslangic`
+ 
+
+9-Customer,Vendor,customer-customerrolemapping  (HAFTALIK ECZA DEPOSU)
+ begin date,end date,period,number of period
+ WHERE     ((`c`.`vendorid` <> 0)
+          AND       (`c`.`active` = 1)
+          AND       (`c`.`createdonutc` >= '2020-10-24')
+          AND       (`cr`.`customerrole_id` = 91))
+
+10-Customer,Vendor,customer-customerrolemapping  (HAFTALIK FİRMA)
+ begin date,end date,period,number of period
+ WHERE     ((`c`.`vendorid` <> 0)
+          AND       (`c`.`active` = 1)
+          AND       (`c`.`createdonutc` >= '2020-10-24')
+          AND       (`cr`.`customerrole_id` = 92))
+
+11-Customer,Vendor,customer-customerrolemapping  (HAFTALIK İTRİYAT DEPOSU)
+ begin date,end date,period,number of period
+ WHERE     ((`c`.`vendorid` <> 0)
+          AND       (`c`.`active` = 1)
+          AND       (`c`.`createdonutc` >= '2020-10-24')
+          AND       (`cr`.`customerrole_id` = 93))
+
+12-Order,Orderitem  (HAFTALIK SATIŞ)
+ begin date,end date,period,number of period
+ count(DISTINCT `o`.`id`) AS `siparissayisi`,
+ sum(`oi`.`quantity`) AS `miktar`,
+ sum(`o`.`ordertotal`) AS `tutar`,
+ count(DISTINCT `o2`.`id`) AS `iptalsayisi`,
+ sum(`oi2`.`quantity`)  AS `iptalmiktar`,
+ sum(`o2`.`ordertotal`) AS `iptaltutar`,
+ count(DISTINCT `o3`.`id`) AS `netsiparis`,
+ sum(`oi3`.`quantity`) AS `netmiktar`,
+ sum(`o3`.`ordertotal`) AS `nettutar`,
+ (sum(`o3`.`ordertotal`) / count(DISTINCT `o3`.`id`)) AS `ortalamasepettutari`
+ WHERE  (`ORDER`.`orderstatusid` = 40))
+  WHERE  (( `ORDER`.`orderstatusid` = 30)
+                        AND    ((`ORDER`.`paymentstatusid` = 30)
+                               OR   (`ORDER`.`paymentstatusid` = 35))))
+ WHERE     ((`o`.`createdonutc` >= '2020-10-24')
+          AND  (0 = `o`.`deleted`)
+          AND  ( `o`.`paymentstatusid` <> 20))
+ 
+
+13-Product, orderitem, order  (KATEGORİSİZ)
+ begin date,end date,period,number of period
+ 'Kategorisiz' AS `name8`,
+  count(DISTINCT `p`.`id`) AS `ilansayisi8`,
+  sum(`oi`.`quantity`) AS `satismiktari8`,
+  sum(`oi`.`priceincltax`) AS `satistutari8`
+ WHERE  ((`product`.`producttypeid` = 5)
+                       AND    (`product`.`parentgroupedproductid` <> 0)
+                       AND    ( 0 <> `product`.`published`)
+                       AND    (0 = `product`.`deleted`))) `p2`
+ WHERE  ((`ORDER`.`orderstatusid` <> 40)
+                       AND    (`ORDER`.`paymentstatusid` <> 20)
+                       AND    (0 = `ORDER`.`deleted`))) `o`
+ WHERE    ((`p`.`producttypeid` = 10)
+         AND      (`p`.`parentgroupedproductid` = 0)
+         AND      (0 <> `p`.`published`)
+         AND      (0 = `p`.`deleted`)
+         AND      (0 = `o`.`deleted`)
+         AND      (`o`.`createdonutc` >= '2020-10-24')
+         AND      `p`.`id` IN
+                  ( SELECT `product_category_mapping`.`productid`
+                    FROM   `product_category_mapping`) IS false)
+
+14-Customer,Genericattribute  (KAYIT OLAN ECZANELER)
+ begin date,end date,period,number of period
+ sum(count(DISTINCT `c`.`id`)) OVER (ORDER BY `c`.`createdonutc` ) AS `kayitolaneczane`,
+ sum(count(DISTINCT `ga1`.`entityid`)) OVER (ORDER BY `c`.`createdonutc` ) AS `avmeczanesi`,
+ sum(count(DISTINCT `ga2`.`entityid`)) OVER (ORDER BY `c`.`createdonutc` )  AS `caddeeczanesi`,
+ sum(count(DISTINCT `ga3`.`entityid`)) OVER (ORDER BY `c`.`createdonutc` )  AS `semteczanesi`,
+ sum(count(DISTINCT `ga4`.`entityid`)) OVER (ORDER BY `c`.`createdonutc` ) AS `asmcevresieczanesi`,
+ sum(count(DISTINCT `ga5`.`entityid`)) OVER (ORDER BY `c`.`createdonutc` ) AS `hastanecevresieczanesi`
+ WHERE  ((`ga`.`KEY` = 'CustomCustomerAttributes')
+                        AND    (`ga`.`value` LIKE '%ID="5"%')
+                        AND    (`ga`.`value` LIKE '%<Value>1</Value>%'))) `ga1`
+                ON ((`c`.`id` = `ga1`.`entityid`)))
+ WHERE  ((`ga`.`KEY` = 'CustomCustomerAttributes')
+                        AND    (`ga`.`value` LIKE '%ID="5"%')
+                        AND    (`ga`.`value` LIKE '%<Value>2</Value>%'))) `ga1`
+                ON ((`c`.`id` = `ga2`.`entityid`)))
+ WHERE  ((`ga`.`KEY` = 'CustomCustomerAttributes')
+                        AND    (`ga`.`value` LIKE '%ID="5"%')
+                        AND    (`ga`.`value` LIKE '%<Value>3</Value>%'))) `ga1`
+                ON ((`c`.`id` = `ga3`.`entityid`)))
+ WHERE  ((`ga`.`KEY` = 'CustomCustomerAttributes')
+                        AND    (`ga`.`value` LIKE '%ID="5"%')
+                        AND    (`ga`.`value` LIKE '%<Value>4</Value>%'))) `ga1`
+                ON ((`c`.`id` = `ga4`.`entityid`)))
+ WHERE  ((`ga`.`KEY` = 'CustomCustomerAttributes')
+                        AND    (`ga`.`value` LIKE '%ID="5"%')
+                        AND    (`ga`.`value` LIKE '%<Value>5</Value>%'))) `ga1`
+                ON ((`c`.`id` = `ga5`.`entityid`)))
+ WHERE     ((`c`.`createdonutc` >= '2020-10-24')
+          AND       (0 = `c`.`deleted`)
+          AND       (0 <> `c`.`active`)
+          AND       (`c`.`email` IS NOT NULL)
+          AND       ((`c`.`id` < 1078412)
+          OR   (`c`.`id` > 1078648)))
+
+15-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (KİŞİSEL BAKIM)
+   begin date,end date,period,number of period
+ `c`.`NAME` AS `name2`,
+  count(DISTINCT `p`.`id`) AS `ilansayisi2`,
+  sum(`oi`.`quantity`)  AS `satismiktari2`,
+  sum(`oi`.`priceincltax`) AS `satistutari2`
+  FROM   `product`
+                WHERE  ((`product`.`producttypeid` = 5)
+                       AND    (`product`.`parentgroupedproductid` <> 0)
+                       AND    (0 <> `product`.`published`)
+                       AND    ( 0 = `product`.`deleted`))) `p2`
+ON      ((`p`.`id` = `p2`.`parentgroupedproductid`)))
+ 
+ WHERE    ((`p`.`producttypeid` = 10)
+         AND      (`p`.`parentgroupedproductid` = 0)
+         AND      (0 <> `p`.`published`)
+         AND      (0 = `p`.`deleted`)
+         AND      (0 = `o`.`deleted`)
+         AND      (`o`.`createdonutc` >= '2020-10-24')
+         AND      (`c`.`NAME` = 'Kişisel Bakım'))
+
+
+16-Customer  (LOGIN YAPMAMIŞ)
+ begin date,end date,period,number of period
+ sum(count(0)) OVER (ORDER BY `c`.`createdonutc` ) 
+ WHERE    ((`c`.`deleted` = 0)
+         AND      (`c`.`createdonutc` >= '2020-10-24')
+         AND      (`c`.`active` = 1)
+         AND      `c`.`id` IN
+                  (SELECT `customer`.`id`
+                         FROM   `customer`
+                         WHERE  ((`customer`.`id` >= 1078412)
+                                AND    (`customer`.`id` <= 1078648))) IS false
+         AND      (`c`.`email` IS NOT NULL)
+         AND      (`c`.`email` <> '')
+         AND      (`c`.`vendorid` = 0))
+
+17-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (MEDİKAL)
+ begin date,end date,period,number of period
+ `c`.`NAME` AS `name2`,
+  count(DISTINCT `p`.`id`) AS `ilansayisi2`,
+  sum(`oi`.`quantity`)  AS `satismiktari2`,
+  sum(`oi`.`priceincltax`) AS `satistutari2`
+  FROM   `product`
+                WHERE  ((`product`.`producttypeid` = 5)
+                       AND    (`product`.`parentgroupedproductid` <> 0)
+                       AND    (0 <> `product`.`published`)
+                       AND    ( 0 = `product`.`deleted`))) `p2`
+ON      ((`p`.`id` = `p2`.`parentgroupedproductid`)))
+ 
+ WHERE    ((`p`.`producttypeid` = 10)
+         AND      (`p`.`parentgroupedproductid` = 0)
+         AND      (0 <> `p`.`published`)
+         AND      (0 = `p`.`deleted`)
+         AND      (0 = `o`.`deleted`)
+         AND      (`o`.`createdonutc` >= '2020-10-24')
+         AND      (`c`.`NAME` = 'Medikal'))
+
+
+18-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (REÇETELİ İLAÇ)
+ begin date,end date,period,number of period
+ `c`.`NAME` AS `name2`,
+  count(DISTINCT `p`.`id`) AS `ilansayisi2`,
+  sum(`oi`.`quantity`)  AS `satismiktari2`,
+  sum(`oi`.`priceincltax`) AS `satistutari2`
+  FROM   `product`
+                WHERE  ((`product`.`producttypeid` = 5)
+                       AND    (`product`.`parentgroupedproductid` <> 0)
+                       AND    (0 <> `product`.`published`)
+                       AND    ( 0 = `product`.`deleted`))) `p2`
+ON      ((`p`.`id` = `p2`.`parentgroupedproductid`)))
+ 
+ WHERE    ((`p`.`producttypeid` = 10)
+         AND      (`p`.`parentgroupedproductid` = 0)
+         AND      (0 <> `p`.`published`)
+         AND      (0 = `p`.`deleted`)
+         AND      (0 = `o`.`deleted`)
+         AND      (`o`.`createdonutc` >= '2020-10-24')
+         AND      (`c`.`NAME` = 'Reçeteli İlaç'))
+
+
+19-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (SAĞLIK)
+ begin date,end date,period,number of period
+ `c`.`NAME` AS `name2`,
+  count(DISTINCT `p`.`id`) AS `ilansayisi2`,
+  sum(`oi`.`quantity`)  AS `satismiktari2`,
+  sum(`oi`.`priceincltax`) AS `satistutari2`
+  FROM   `product`
+                WHERE  ((`product`.`producttypeid` = 5)
+                       AND    (`product`.`parentgroupedproductid` <> 0)
+                       AND    (0 <> `product`.`published`)
+                       AND    ( 0 = `product`.`deleted`))) `p2`
+ON      ((`p`.`id` = `p2`.`parentgroupedproductid`)))
+ 
+ WHERE    ((`p`.`producttypeid` = 10)
+         AND      (`p`.`parentgroupedproductid` = 0)
+         AND      (0 <> `p`.`published`)
+         AND      (0 = `p`.`deleted`)
+         AND      (0 = `o`.`deleted`)
+         AND      (`o`.`createdonutc` >= '2020-10-24')
+         AND      (`c`.`NAME` = 'Sağlık'))
+
+
+20-AllCategoriesByParent, category, Order,pcm,product,OrderItem  (SARF MALZEMELERİ)
+  begin date,end date,period,number of period
+ `c`.`NAME` AS `name2`,
+  count(DISTINCT `p`.`id`) AS `ilansayisi2`,
+  sum(`oi`.`quantity`)  AS `satismiktari2`,
+  sum(`oi`.`priceincltax`) AS `satistutari2`
+  FROM   `product`
+                WHERE  ((`product`.`producttypeid` = 5)
+                       AND    (`product`.`parentgroupedproductid` <> 0)
+                       AND    (0 <> `product`.`published`)
+                       AND    ( 0 = `product`.`deleted`))) `p2`
+ON      ((`p`.`id` = `p2`.`parentgroupedproductid`)))
+ 
+ WHERE    ((`p`.`producttypeid` = 10)
+         AND      (`p`.`parentgroupedproductid` = 0)
+         AND      (0 <> `p`.`published`)
+         AND      (0 = `p`.`deleted`)
+         AND      (0 = `o`.`deleted`)
+         AND      (`o`.`createdonutc` >= '2020-10-24')
+         AND      (`c`.`NAME` = 'Sarf Malzemeleri'))
+
+
+21-Order  (SİPARİŞ VEREN ECZANE)
+ begin date,end date,period,number of period
+ count(DISTINCT `o`.`customerid`) AS `siparisvereneczane`
+ WHERE    ((`o`.`createdonutc` >= '2020-10-24')
+         AND      (`o`.`paymentstatusid` <> 20)
+         AND      (`o`.`orderstatusid` <> 40))
+22-Customer,Order  (SİPARİŞ VERMEMİŞ)
+ begin date,end date,period,number of period
+ sum(count(0)) OVER (ORDER BY `c`.`createdonutc` ) AS `siparisvermemisler`
+ WHERE    ((`c`.`deleted` = 0)
+         AND      (`c`.`createdonutc` >= '2020-10-24')
+         AND      (`c`.`active` = 1)
+         AND      `c`.`id` IN
+                  (SELECT `customer`.`id`
+                         FROM   `customer`
+                         WHERE  ((`customer`.`id` >= 1078412)
+                                AND    ( `customer`.`id` <= 1078648))) IS false
+         AND      (`c`.`email` IS NOT NULL)
+         AND      (`c`.`email` <> '')
+         AND      (`c`.`vendorid` = 0)
+         AND      `c`.`id` IN
+                  (SELECT `ORDER`.`customerid`
+                         FROM   `ORDER`
+                         WHERE  ((`ORDER`.`deleted` = 0)
+                                AND    (`ORDER`.`paymentstatusid` <> 20))) IS false)
+ 
+
+23-OrderVendorRewiev  (YORUM VE PUAN)
+ begin date,end date,period,number of period
+ count(`ovr`.`reviewtext`) AS `yorumsayisi`,
+ count(`ovr`.`deliveryrating`) AS `puanlama`
+ WHERE    (`ovr`.`createdonutc` >= '2020-10-24')
